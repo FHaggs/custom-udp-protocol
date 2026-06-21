@@ -33,7 +33,7 @@ def test_end_to_end_transfer(mode: ProtocolMode, window: int, tmp_path: Path) ->
         output_path=output_path,
     )
     sender = RtpSender(
-        bind_host="127.0.0.2",
+        bind_host="127.0.0.1",
         peer_host="127.0.0.1",
         port=base_port,
         mode=mode,

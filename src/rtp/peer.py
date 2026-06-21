@@ -59,6 +59,27 @@ def create_bound_socket(bind_host: str, port: int, timeout: float | None) -> soc
     return udp_socket
 
 
+def create_sender_socket_pair(bind_host: str, timeout: float) -> tuple[socket.socket, socket.socket]:
+    while True:
+        data_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        data_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        data_socket.bind((bind_host, 0))
+        data_socket.settimeout(timeout)
+        data_port = int(data_socket.getsockname()[1])
+
+        if data_port >= 65535:
+            data_socket.close()
+            continue
+
+        try:
+            control_socket = create_bound_socket(bind_host, data_port + 1, timeout)
+        except OSError:
+            data_socket.close()
+            continue
+
+        return data_socket, control_socket
+
+
 def receive_packet(udp_socket: socket.socket) -> tuple[Packet | None, SocketAddress]:
     data, address = udp_socket.recvfrom(4096)
     return Packet.parse(data), address
@@ -87,16 +108,16 @@ class RtpSender:
         payload = self.input_path.read_bytes()
         packets = build_data_packets(payload)
 
-        with create_bound_socket(self.bind_host, self.port, TIMEOUT_SECONDS) as data_socket:
+        data_socket, control_socket = create_sender_socket_pair(self.bind_host, TIMEOUT_SECONDS)
+        with data_socket, control_socket:
             session = self._establish_session(data_socket)
-            with create_bound_socket(self.bind_host, self.port + 1, TIMEOUT_SECONDS) as control_socket:
-                if self.mode is ProtocolMode.STOP_AND_WAIT:
-                    self._send_stop_and_wait(data_socket, control_socket, session, packets)
-                elif self.mode is ProtocolMode.GO_BACK_N:
-                    self._send_go_back_n(data_socket, control_socket, session, packets)
-                else:
-                    self._send_selective_repeat(data_socket, control_socket, session, packets)
-                self._close_session(data_socket, control_socket, session)
+            if self.mode is ProtocolMode.STOP_AND_WAIT:
+                self._send_stop_and_wait(data_socket, control_socket, session, packets)
+            elif self.mode is ProtocolMode.GO_BACK_N:
+                self._send_go_back_n(data_socket, control_socket, session, packets)
+            else:
+                self._send_selective_repeat(data_socket, control_socket, session, packets)
+            self._close_session(data_socket, control_socket, session)
 
         self.stats.finish()
         return self.stats
