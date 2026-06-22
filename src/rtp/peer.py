@@ -80,10 +80,10 @@ def create_bound_socket(bind_host: str, port: int, timeout: float | None) -> soc
     return udp_socket
 
 
-def create_sender_socket(bind_host: str, timeout: float) -> socket.socket:
+def create_sender_socket(bind_host: str, port: int, timeout: float) -> socket.socket:
     sender_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sender_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sender_socket.bind((bind_host, 0))
+    sender_socket.bind((bind_host, port + 1))
     sender_socket.settimeout(timeout)
     return sender_socket
 
@@ -127,7 +127,7 @@ class RtpSender:
             self.port,
         )
 
-        sender_socket = create_sender_socket(self.bind_host, TIMEOUT_SECONDS)
+        sender_socket = create_sender_socket(self.bind_host, self.port, TIMEOUT_SECONDS)
         with sender_socket:
             session = self._establish_session(sender_socket)
             if self.mode is ProtocolMode.STOP_AND_WAIT:

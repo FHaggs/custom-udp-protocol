@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from rtp.peer import create_sender_socket
 from rtp.protocol import HEADER_SIZE, Header, Packet, build_data_packets, seq_in_window
 
 
@@ -31,3 +32,10 @@ def test_build_data_packets_keeps_short_last_payload() -> None:
 def test_sequence_window_wraps_correctly() -> None:
     assert seq_in_window(0, 16383, 2)
     assert not seq_in_window(2, 16383, 2)
+
+
+def test_create_sender_socket_binds_to_base_port_plus_one() -> None:
+    base_port = 19000
+
+    with create_sender_socket("127.0.0.1", base_port, 0.1) as sender_socket:
+        assert sender_socket.getsockname()[1] == base_port + 1

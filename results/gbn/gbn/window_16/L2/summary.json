@@ -7,22 +7,22 @@
   "output_sha256": "f15595903895536b73d669d601a0c865629d93597d94feea8fc03f8c07ebdf7d",
   "receiver": {
     "bytes_transferred": 16320,
-    "datagrams_received": 102,
-    "datagrams_sent": 100,
-    "duration_seconds": 0.9528934259997186,
-    "retransmissions": 1,
-    "throughput_bytes_per_second": 17126.784123710408
+    "datagrams_received": 71,
+    "datagrams_sent": 69,
+    "duration_seconds": 0.9218698370004859,
+    "retransmissions": 2,
+    "throughput_bytes_per_second": 17703.149994689975
   },
   "scenario": "L2",
   "scenario_kind": "latency",
   "scenario_value": 100,
   "sender": {
     "bytes_transferred": 16320,
-    "datagrams_received": 100,
-    "datagrams_sent": 103,
-    "duration_seconds": 0.7086509520004256,
-    "retransmissions": 34,
-    "throughput_bytes_per_second": 23029.67342939546
+    "datagrams_received": 69,
+    "datagrams_sent": 72,
+    "duration_seconds": 0.7083244509994984,
+    "retransmissions": 2,
+    "throughput_bytes_per_second": 23040.288919818126
   },
   "window": 16
 }

@@ -7,22 +7,22 @@
   "output_sha256": "f15595903895536b73d669d601a0c865629d93597d94feea8fc03f8c07ebdf7d",
   "receiver": {
     "bytes_transferred": 16320,
-    "datagrams_received": 553,
-    "datagrams_sent": 552,
-    "duration_seconds": 0.386570546999792,
+    "datagrams_received": 722,
+    "datagrams_sent": 721,
+    "duration_seconds": 0.6129256499998519,
     "retransmissions": 0,
-    "throughput_bytes_per_second": 42217.39117649018
+    "throughput_bytes_per_second": 26626.394245376978
   },
   "scenario": "P3",
   "scenario_kind": "loss",
   "scenario_value": 10,
   "sender": {
     "bytes_transferred": 16320,
-    "datagrams_received": 552,
-    "datagrams_sent": 939,
-    "duration_seconds": 0.14318852799988235,
-    "retransmissions": 871,
-    "throughput_bytes_per_second": 113975.61123062462
+    "datagrams_received": 721,
+    "datagrams_sent": 1097,
+    "duration_seconds": 0.36911923799925717,
+    "retransmissions": 1029,
+    "throughput_bytes_per_second": 44213.35525197644
   },
   "window": 16
 }

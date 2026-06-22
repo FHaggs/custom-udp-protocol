@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+import socket
 import threading
 import time
 
 import pytest
 
 import rtp.peer as peer_module
-from rtp.peer import RtpReceiver, RtpSender
-from rtp.protocol import Header, Packet, ProtocolMode
+from rtp.peer import RtpReceiver, RtpSender, create_sender_socket
+from rtp.protocol import Header, Packet, ProtocolMode, build_control_packet
 
 
 @pytest.mark.parametrize(
@@ -50,6 +51,36 @@ def test_end_to_end_transfer(mode: ProtocolMode, window: int, tmp_path: Path) ->
 
     assert not receiver_thread.is_alive()
     assert output_path.read_bytes() == source_bytes
+
+
+def test_sender_uses_p_plus_one_for_roundtrip_control() -> None:
+    base_port = 24000 + int(time.time() * 1000) % 10000
+
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as receiver_socket:
+        receiver_socket.bind(("127.0.0.1", base_port))
+        receiver_socket.settimeout(1.0)
+
+        with create_sender_socket("127.0.0.1", base_port, 1.0) as sender_socket:
+            sender_socket.sendto(
+                build_control_packet(syn=True, length=4).to_bytes(),
+                ("127.0.0.1", base_port),
+            )
+
+            _, sender_address = receiver_socket.recvfrom(4096)
+
+            receiver_socket.sendto(
+                build_control_packet(ack=0, ack_flag=True).to_bytes(),
+                sender_address,
+            )
+
+            raw_response, response_address = sender_socket.recvfrom(4096)
+
+    response_packet = Packet.parse(raw_response)
+
+    assert sender_address[1] == base_port + 1
+    assert response_address[1] == base_port
+    assert response_packet is not None
+    assert response_packet.header.ack_flag is True
 
 
 def test_sender_repeats_final_ack_on_duplicate_syn_ack(monkeypatch, tmp_path: Path) -> None:

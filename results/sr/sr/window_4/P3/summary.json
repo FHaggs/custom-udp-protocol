@@ -8,21 +8,21 @@
   "receiver": {
     "bytes_transferred": 16320,
     "datagrams_received": 77,
-    "datagrams_sent": 92,
-    "duration_seconds": 0.27751775799970346,
+    "datagrams_sent": 93,
+    "duration_seconds": 0.28144021299976885,
     "retransmissions": 0,
-    "throughput_bytes_per_second": 58807.047583662876
+    "throughput_bytes_per_second": 57987.44900755673
   },
   "scenario": "P3",
   "scenario_kind": "loss",
   "scenario_value": 10,
   "sender": {
     "bytes_transferred": 16320,
-    "datagrams_received": 92,
-    "datagrams_sent": 84,
-    "duration_seconds": 0.008901964999495249,
-    "retransmissions": 16,
-    "throughput_bytes_per_second": 1833303.0966674618
+    "datagrams_received": 93,
+    "datagrams_sent": 85,
+    "duration_seconds": 0.009056668999619433,
+    "retransmissions": 17,
+    "throughput_bytes_per_second": 1801987.022015023
   },
   "window": 4
 }

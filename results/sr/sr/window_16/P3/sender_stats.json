@@ -1,1 +1,1 @@
-{"bytes_transferred": 16320, "datagrams_received": 132, "datagrams_sent": 106, "duration_seconds": 0.020513356999799726, "retransmissions": 38, "throughput_bytes_per_second": 795579.1926284584}
+{"bytes_transferred": 16320, "datagrams_received": 151, "datagrams_sent": 116, "duration_seconds": 0.013751315000263276, "retransmissions": 48, "throughput_bytes_per_second": 1186795.590071753}

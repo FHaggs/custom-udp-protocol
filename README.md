@@ -53,7 +53,7 @@ Argumentos principais:
 - Three-way handshake com negociacao de janela pelo campo `Length`.
 - Two-way close com `FIN` e `FIN+ACK`.
 - Timeout fixo de 100 ms.
-- O sender usa um unico socket UDP local efemero e mantem a mesma tupla de origem durante handshake, dados e controle.
+- O receiver escuta na porta base `P`, e o sender usa a porta local `P+1` para handshake, dados e controle.
 - Segmentacao em pacotes de 255 bytes com pacote final de tamanho menor ou `0` quando o arquivo e multiplo exato de 255 bytes.
 - Variantes stop-and-wait, Go-Back-N e Selective Repeat em um unico binario.
 

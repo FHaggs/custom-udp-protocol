@@ -9,9 +9,9 @@
     "bytes_transferred": 16320,
     "datagrams_received": 68,
     "datagrams_sent": 67,
-    "duration_seconds": 0.40738560299996607,
+    "duration_seconds": 0.40337523900052474,
     "retransmissions": 0,
-    "throughput_bytes_per_second": 40060.325843182436
+    "throughput_bytes_per_second": 40458.606334978256
   },
   "scenario": "R1",
   "scenario_kind": "reorder",
@@ -20,9 +20,9 @@
     "bytes_transferred": 16320,
     "datagrams_received": 67,
     "datagrams_sent": 68,
-    "duration_seconds": 0.14819541300039418,
+    "duration_seconds": 0.14633984299962322,
     "retransmissions": 0,
-    "throughput_bytes_per_second": 110124.86601023603
+    "throughput_bytes_per_second": 111521.23485633383
   },
   "window": 16
 }
