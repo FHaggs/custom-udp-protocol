@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import json
 from pathlib import Path
 import socket
 import time
+from typing import Callable
 
 from rtp.protocol import (
-    MAX_PAYLOAD_SIZE,
     ProtocolMode,
     TIMEOUT_SECONDS,
     Packet,
     build_control_packet,
     build_data_packets,
     seq_add,
-    seq_distance,
     seq_in_window,
     seq_is_recent,
     seq_prev,
@@ -26,6 +26,7 @@ SocketAddress = tuple[str, int]
 class TransferStats:
     started_at: float = field(default_factory=time.monotonic)
     finished_at: float = 0.0
+    bytes_transferred: int = 0
     datagrams_sent: int = 0
     datagrams_received: int = 0
     retransmissions: int = 0
@@ -37,6 +38,25 @@ class TransferStats:
     def duration(self) -> float:
         end_time = self.finished_at or time.monotonic()
         return max(end_time - self.started_at, 0.0)
+
+    @property
+    def throughput_bytes_per_second(self) -> float:
+        if self.duration == 0:
+            return 0.0
+        return self.bytes_transferred / self.duration
+
+    def to_dict(self) -> dict[str, float | int]:
+        return {
+            "bytes_transferred": self.bytes_transferred,
+            "datagrams_sent": self.datagrams_sent,
+            "datagrams_received": self.datagrams_received,
+            "retransmissions": self.retransmissions,
+            "duration_seconds": self.duration,
+            "throughput_bytes_per_second": self.throughput_bytes_per_second,
+        }
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), sort_keys=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +127,7 @@ class RtpSender:
     def run(self) -> TransferStats:
         payload = self.input_path.read_bytes()
         packets = build_data_packets(payload)
+        self.stats.bytes_transferred = len(payload)
 
         data_socket, control_socket = create_sender_socket_pair(self.bind_host, TIMEOUT_SECONDS)
         with data_socket, control_socket:
@@ -317,7 +338,7 @@ class RtpSender:
     def _wait_for_control(
         self,
         udp_socket: socket.socket,
-        predicate: callable[[Packet, SocketAddress], bool],
+        predicate: Callable[[Packet, SocketAddress], bool],
         deadline: float | None = None,
     ) -> Packet | None:
         until = deadline if deadline is not None else time.monotonic() + TIMEOUT_SECONDS
@@ -329,8 +350,6 @@ class RtpSender:
             try:
                 packet, address = receive_packet(udp_socket)
             except TimeoutError:
-                return None
-            except socket.timeout:
                 return None
             if packet is None:
                 continue
@@ -361,6 +380,7 @@ class RtpReceiver:
             session = self._accept_session(data_socket)
             payload = self._receive_stream(data_socket, session)
             self.output_path.write_bytes(payload)
+            self.stats.bytes_transferred = len(payload)
         self.stats.finish()
         return self.stats
 

@@ -62,3 +62,19 @@ Argumentos principais:
 ```bash
 uv run pytest
 ```
+
+## Cenarios do trabalho
+
+Para executar os cenarios obrigatorios com metricas e arquivos de captura, use o runner:
+
+```bash
+uv run rtp-scenarios --help
+```
+
+O procedimento recomendado com `ip netns`, `tc netem` e `tcpdump` esta descrito em `testing.md`.
+
+Para rodar todas as baterias obrigatorias em sequencia, use:
+
+```bash
+sudo -E env "PATH=$PATH" bash scripts/run_required_batches.sh
+```

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 
 from rtp.peer import RtpReceiver, RtpSender
 from rtp.protocol import ProtocolMode
@@ -30,7 +31,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--window", type=int, default=4, help="proposed window size")
     parser.add_argument("--input", help="input file for sender mode")
     parser.add_argument("--output", help="output file for receiver mode")
+    parser.add_argument("--stats-json", help="write transfer metrics as JSON to this path")
     return parser
+
+
+def write_stats(stats_path: str | None, stats_json: str) -> None:
+    if stats_path is None:
+        print(stats_json, file=sys.stderr)
+        return
+    Path(stats_path).write_text(stats_json + "\n", encoding="utf-8")
 
 
 def main() -> int:
@@ -52,7 +61,8 @@ def main() -> int:
             window=args.window,
             output_path=Path(args.output),
         )
-        receiver.run()
+        stats = receiver.run()
+        write_stats(args.stats_json, stats.to_json())
         return 0
 
     if not args.input:
@@ -66,7 +76,8 @@ def main() -> int:
         window=args.window,
         input_path=Path(args.input),
     )
-    sender.run()
+    stats = sender.run()
+    write_stats(args.stats_json, stats.to_json())
     return 0
 
 
