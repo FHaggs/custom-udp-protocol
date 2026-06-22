@@ -145,6 +145,8 @@ sudo -E env "PATH=$PATH" uv run rtp-scenarios \
   --capture-pcap
 ```
 
+O runner usa `180s` por cenário por padrão, exatamente para acomodar cenários mais pesados de perda e retransmissão.
+
 ## Comandos para rodar as baterias em sequencia
 
 ### Opcao 1: script unico

@@ -101,7 +101,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rx-interface")
     parser.add_argument("--impair-side", choices=("sender", "receiver"), default="sender")
     parser.add_argument("--capture-pcap", action="store_true")
-    parser.add_argument("--timeout-seconds", type=float, default=30.0)
+    parser.add_argument("--timeout-seconds", type=float, default=180.0)
     return parser
 
 
@@ -286,6 +286,7 @@ def build_rtp_command(
 ) -> list[str]:
     command = [
         sys.executable,
+        "-u",
         "-m",
         "rtp",
         "--bind-host",
@@ -321,7 +322,13 @@ def run_command(
 ) -> subprocess.CompletedProcess[bytes]:
     wrapped = wrap_with_namespace(namespace, command)
     with log_path.open("wb") as log_handle:
-        return subprocess.run(wrapped, stdout=log_handle, stderr=subprocess.STDOUT, timeout=timeout_seconds, check=False)
+        try:
+            return subprocess.run(wrapped, stdout=log_handle, stderr=subprocess.STDOUT, timeout=timeout_seconds, check=False)
+        except subprocess.TimeoutExpired as error:
+            message = f"\n[TIMEOUT] command timed out after {timeout_seconds} seconds\n"
+            log_handle.write(message.encode("utf-8"))
+            log_handle.flush()
+            raise error
 
 
 def wrap_with_namespace(namespace: str | None, command: list[str]) -> list[str]:

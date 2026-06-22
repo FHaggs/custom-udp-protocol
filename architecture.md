@@ -169,7 +169,7 @@ Regras aplicadas:
 
 Isso implementa diretamente a semantica do campo `Length` na especificacao.
 
-## Sessao: por que existem `data_socket` e `control_socket`
+## Sessao: mesma tupla de conexao
 
 Essa e a parte mais importante para entender a arquitetura.
 
@@ -180,53 +180,54 @@ O protocolo e half-duplex para dados:
 - um lado envia dados;
 - o outro lado responde apenas com controle.
 
-Na implementacao, isso e refletido em dois canais logicos:
+Na implementacao, isso e refletido em dois tipos de mensagem:
 
-- canal de dados;
-- canal de controle.
+- pacotes de dados;
+- pacotes de controle.
 
-Por isso o sender possui dois sockets locais:
+Isso nao exige dois sockets.
+O sender mantem um unico socket UDP local durante toda a sessao:
 
-- `data_socket`: usado para enviar `SYN`, dados e `FIN`;
-- `control_socket`: usado para receber `ACK`, `NACK` e `FIN+ACK`.
+- o mesmo socket envia `SYN`, dados e `FIN`;
+- o mesmo socket recebe `SYN+ACK`, `ACK`, `NACK` e `FIN+ACK`.
 
 ### Por que isso existe
 
-Sem essa separacao, ficaria mais dificil modelar o comportamento pedido pela especificacao, em especial a ideia de que o sender passa a “escutar ACKs” em uma porta dedicada apos o handshake.
+Isso segue a especificacao de interoperabilidade com a mesma tupla observada no handshake.
+O receiver responde sempre para o mesmo endereco de origem do sender.
 
-Em termos arquiteturais, essa divisao tem tres beneficios:
+Em termos arquiteturais, esse modelo tem tres beneficios:
 
-- separa claramente trafego de dados de trafego de controle;
-- simplifica a leitura da maquina de estados do sender;
-- deixa a implementacao preparada para os modos com janela deslizante, onde varios ACKs/NACKs podem chegar enquanto ainda existem dados em voo.
+- preserva a mesma tupla ao longo de toda a sessao;
+- simplifica a interoperabilidade entre implementacoes diferentes;
+- continua atendendo os modos com janela deslizante, onde varios ACKs/NACKs podem chegar enquanto ainda existem dados em voo.
 
 ### Como isso aparece na pratica
 
 No sender:
 
-- `data_socket` envia para `receiver:P`;
-- `control_socket` escuta em uma porta local separada;
-- o receiver aprende essa porta local indiretamente, usando `peer_control = (sender_ip, sender_port_de_dados + 1)`.
+- o socket local efemero envia para `receiver:P`;
+- o mesmo socket local recebe as respostas de controle;
+- a origem observada pelo receiver no `SYN` e a mesma origem usada depois nos dados.
 
 No receiver:
 
 - existe apenas um socket bound na porta `P`;
 - esse mesmo socket recebe dados e envia respostas de controle;
-- os `ACK`/`NACK` sao enviados para a porta de controle do sender.
+- os `ACK`/`NACK` sao enviados para a mesma tupla de origem do sender.
 
-Ou seja, a separacao `data/control` e mais forte do lado do sender do que do lado do receiver.
+Ou seja, ha separacao logica entre dados e controle, mas nao ha uma segunda porta dedicada para isso.
 
 ### Caso local na mesma maquina
 
 Quando sender e receiver rodam no mesmo host, ambos nao podem tentar usar a mesma porta local `P` ao mesmo tempo.
-Por isso a implementacao atual faz o sender abrir um par local efemero:
+Por isso a implementacao faz o sender abrir uma porta local efemera qualquer:
 
-- uma porta aleatoria `X` para dados;
-- a porta `X+1` para controle.
+- uma porta aleatoria `X` para toda a sessao.
 
-Isso preserva a ideia do protocolo de ter um canal de controle separado, mas evita colisao local de bind.
+Isso evita colisao local de bind sem introduzir uma convencao extra de porta para controle.
 
-Esse detalhe esta em `create_sender_socket_pair()`.
+Esse detalhe esta em `create_sender_socket()`.
 
 ## Handshake
 
@@ -276,11 +277,10 @@ Isso e consistente com o restante do protocolo: timeouts sao tratados como perda
 
 Depois do handshake, o codigo materializa a sessao no dataclass `Session`, que guarda:
 
-- `peer_data`: endereco remoto usado para trafego de dados;
-- `peer_control`: endereco remoto usado para trafego de controle;
+- `peer`: endereco remoto usado para toda a sessao;
 - `window`: janela negociada.
 
-Esse objeto evita recalcular destinos de envio em varios pontos da implementacao.
+Esse objeto evita recalcular o destino remoto em varios pontos da implementacao.
 
 ## Fluxo do sender
 
@@ -468,14 +468,14 @@ Mesmo que compartilhem o mesmo header, os papeis sao bem diferentes:
 
 Juntar tudo em uma unica classe tornaria os fluxos mais confusos.
 
-### 3. Tornar o canal de controle explicito
+### 3. Tornar o controle explicito
 
 O protocolo conceitualmente separa dados de controle.
 Modelar isso no codigo deixa mais claro:
 
 - onde o sender espera `ACK`;
 - onde o receiver envia `NACK`;
-- por que existe uma porta local adicional no sender.
+- que o controle trafega pela mesma tupla observada no handshake.
 
 ## Limitacoes atuais
 

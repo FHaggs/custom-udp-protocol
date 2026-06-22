@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 import sys
 
@@ -32,6 +33,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--input", help="input file for sender mode")
     parser.add_argument("--output", help="output file for receiver mode")
     parser.add_argument("--stats-json", help="write transfer metrics as JSON to this path")
+    parser.add_argument(
+        "--log-level",
+        choices=("DEBUG", "INFO", "WARNING", "ERROR"),
+        default="INFO",
+        help="application log level",
+    )
     return parser
 
 
@@ -45,6 +52,11 @@ def write_stats(stats_path: str | None, stats_json: str) -> None:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
+
+    logging.basicConfig(
+        level=getattr(logging, args.log_level),
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
 
     if not 1 <= args.port <= 65534:
         parser.error("--port must be between 1 and 65534")
