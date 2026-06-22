@@ -1,0 +1,28 @@
+{
+  "capture_pcap": true,
+  "hash_match": true,
+  "input_bytes": 16320,
+  "input_sha256": "f15595903895536b73d669d601a0c865629d93597d94feea8fc03f8c07ebdf7d",
+  "mode": "sr",
+  "output_sha256": "f15595903895536b73d669d601a0c865629d93597d94feea8fc03f8c07ebdf7d",
+  "receiver": {
+    "bytes_transferred": 16320,
+    "datagrams_received": 136,
+    "datagrams_sent": 134,
+    "duration_seconds": 1.3392303880000327,
+    "retransmissions": 2,
+    "throughput_bytes_per_second": 12186.103411506223
+  },
+  "scenario": "L3",
+  "scenario_kind": "latency",
+  "scenario_value": 150,
+  "sender": {
+    "bytes_transferred": 16320,
+    "datagrams_received": 134,
+    "datagrams_sent": 137,
+    "duration_seconds": 1.0582827459993496,
+    "retransmissions": 67,
+    "throughput_bytes_per_second": 15421.209560200115
+  },
+  "window": 16
+}
