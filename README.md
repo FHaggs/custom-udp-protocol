@@ -34,6 +34,35 @@ uv run rtp --listen --bind-host 127.0.0.1 --port 9000 --mode saw --window 4 --ou
 uv run rtp --port 9000 --mode saw --window 4 --input arquivo.bin
 ```
 
+Teste em LAN entre duas maquinas:
+
+No receiver, escute em todas as interfaces ou fixe a interface da rede local:
+
+```bash
+uv run rtp --listen --bind-host 0.0.0.0 --port 9000 --mode saw --window 4 --output recebido.bin
+```
+
+No sender, informe o IP do receiver na LAN:
+
+```bash
+uv run rtp --host 192.168.1.10 --port 9000 --mode saw --window 4 --input arquivo.bin
+```
+
+Como descobrir o IP correto:
+
+- O IP que importa para o sender e o IP da maquina receiver na mesma rede local.
+- Nao use `127.0.0.1` em maquinas diferentes; esse endereco sempre aponta para a propria maquina.
+- No Linux, liste os IPv4 da maquina com:
+
+```bash
+hostname -I
+ip -4 addr show
+```
+
+- Procure o endereco da interface conectada a LAN, por exemplo `192.168.x.x` ou `10.x.x.x`.
+- Se quiser escutar so em uma interface especifica, troque `--bind-host 0.0.0.0` pelo IP local do receiver, por exemplo `--bind-host 192.168.1.10`.
+- Antes de testar, confirme que as duas maquinas se alcancam com `ping` e que a porta UDP escolhida nao esta bloqueada por firewall.
+
 O `--host` no sender e o destino do receiver. Em teste local ele pode ser omitido, porque o padrao ja e `127.0.0.1`.
 
 Argumentos principais:
