@@ -1,6 +1,6 @@
 # RTP over UDP
 
-Implementacao em Python do Reliable Transport Protocol descrito em 04 - Protocolo HTTP.pdf.
+Implementacao em Python do Reliable Transport Protocol
 
 ## Requisitos
 
@@ -31,7 +31,7 @@ Teste local na mesma maquina:
 
 ```bash
 uv run rtp --listen --bind-host 127.0.0.1 --port 9000 --mode saw --window 4 --output recebido.bin
-uv run rtp --port 9000 --mode saw --window 4 --input arquivo.bin
+uv run rtp --port 9000 --mode saw --window 4 --input pyproject.toml
 ```
 
 Teste em LAN entre duas maquinas:
@@ -46,6 +46,12 @@ No sender, informe o IP do receiver na LAN:
 
 ```bash
 uv run rtp --host 192.168.1.10 --port 9000 --mode saw --window 4 --input arquivo.bin
+```
+
+Ou para testes locais 
+
+```bash
+uv run rtp --host 127.0.0.1 --port 9000 --mode saw --window 4 --input pyproject.toml
 ```
 
 Como descobrir o IP correto:

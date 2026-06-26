@@ -176,7 +176,8 @@ class RtpSender:
         session: Session,
     ) -> None:
         fin_packet = build_control_packet(fin=True)
-        while True:
+        retries = 0
+        while retries < 10:
             LOGGER.info("sender_close send_fin")
             self._send_packet(data_socket, fin_packet, session.peer)
             response = self._wait_for_control(
@@ -193,6 +194,8 @@ class RtpSender:
                 return
             LOGGER.warning("sender_close timeout waiting_for=fin_ack")
             self.stats.retransmissions += 1
+            retries += 1
+        LOGGER.warning("sender_close gave up waiting for fin_ack")
 
     def _send_stop_and_wait(
         self,
@@ -479,14 +482,15 @@ class RtpReceiver:
             syn_ack = build_control_packet(syn=True, ack=0, ack_flag=True, length=self.window)
             LOGGER.info("receiver_handshake syn_received proposed_window=%s peer=%s:%s", proposed_window, address[0], address[1])
 
+            self._send_packet(data_socket, syn_ack, address)
             while True:
-                self._send_packet(data_socket, syn_ack, address)
                 data_socket.settimeout(TIMEOUT_SECONDS)
                 try:
                     response, response_address = receive_packet(data_socket)
                 except socket.timeout:
                     LOGGER.warning("receiver_handshake timeout waiting_for=final_ack")
                     self.stats.retransmissions += 1
+                    self._send_packet(data_socket, syn_ack, address)
                     continue
                 finally:
                     data_socket.settimeout(None)
@@ -498,9 +502,13 @@ class RtpReceiver:
                     continue
                 if response.header.syn and not response.header.ack_flag:
                     self.stats.retransmissions += 1
+                    self._send_packet(data_socket, syn_ack, address)
                     continue
                 if response.header.ack_flag and not response.header.syn and not response.header.fin:
                     LOGGER.info("receiver_handshake established negotiated_window=%s", proposed_window)
+                    return Session(peer=address, window=proposed_window)
+                if not response.header.syn and not response.header.fin and not response.header.ack_flag and not response.header.nack:
+                    LOGGER.info("receiver_handshake established_by_data negotiated_window=%s", proposed_window)
                     return Session(peer=address, window=proposed_window)
 
     def _receive_stream(self, data_socket: socket.socket, session: Session) -> bytes:
@@ -542,6 +550,8 @@ class RtpReceiver:
                 self._send_packet(data_socket, build_control_packet(ack=seq, ack_flag=True), session.peer)
                 expected = seq_add(expected, 1)
                 self._maybe_log_receiver_progress("saw", expected, len(assembled))
+                if packet.header.length < 255:
+                    LOGGER.info("receiver_push_to_application bytes=%s", len(assembled))
                 continue
 
             if seq == seq_prev(expected):
@@ -571,6 +581,8 @@ class RtpReceiver:
                 self._send_packet(data_socket, build_control_packet(ack=seq, ack_flag=True), session.peer)
                 expected = seq_add(expected, 1)
                 self._maybe_log_receiver_progress("gbn", expected, len(assembled))
+                if packet.header.length < 255:
+                    LOGGER.info("receiver_push_to_application bytes=%s", len(assembled))
                 continue
 
             if seq_in_window(seq, expected, session.window):
@@ -628,8 +640,11 @@ class RtpReceiver:
                         session.peer,
                     )
                 while base in buffered:
-                    assembled.extend(buffered.pop(base))
+                    payload = buffered.pop(base)
+                    assembled.extend(payload)
                     base = seq_add(base, 1)
+                    if len(payload) < 255:
+                        LOGGER.info("receiver_push_to_application bytes=%s", len(assembled))
                 self._maybe_log_receiver_progress("sr", base, len(assembled))
                 continue
 
